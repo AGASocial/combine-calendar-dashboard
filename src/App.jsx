@@ -11,6 +11,10 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
+  CalendarImportHelpBanner,
+  CalendarImportHelpModal,
+} from "@/components/CalendarImportHelpModal";
+import {
   fetchCalendarIcs,
   parseIcsToEvents,
   resolveFeedUrl,
@@ -131,6 +135,7 @@ export default function CombinedCalendarDashboard() {
   });
   const [feedMessage, setFeedMessage] = useState("");
   const [syncingFeedId, setSyncingFeedId] = useState(null);
+  const [importHelpOpen, setImportHelpOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(
@@ -357,6 +362,9 @@ export default function CombinedCalendarDashboard() {
           </div>
         </header>
 
+        <CalendarImportHelpBanner onOpenHelp={() => setImportHelpOpen(true)} />
+        <CalendarImportHelpModal open={importHelpOpen} onOpenChange={setImportHelpOpen} />
+
         <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
           <div className="space-y-6">
             <Card className="rounded-3xl border-0 shadow-sm">
@@ -389,7 +397,14 @@ export default function CombinedCalendarDashboard() {
                   <Link2 className="h-5 w-5" /> Connect calendar
                 </h2>
                 <p className="mb-4 text-sm text-slate-500">
-                  Paste an <strong>ICS subscription URL</strong> (.ics or webcal://). Set <strong>Source</strong> to Microsoft for Outlook feeds.
+                  Paste an <strong>ICS subscription URL</strong> (.ics or webcal://). Set <strong>Source</strong> to Microsoft for Outlook feeds.{" "}
+                  <button
+                    type="button"
+                    className="font-medium text-slate-700 underline-offset-2 hover:underline"
+                    onClick={() => setImportHelpOpen(true)}
+                  >
+                    How to get the URL
+                  </button>
                 </p>
                 <form onSubmit={addFeed} className="space-y-4">
                   <label className="block">

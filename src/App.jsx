@@ -334,6 +334,13 @@ export default function CombinedCalendarDashboard() {
     setEvents((current) => current.filter((event) => event.feedId));
   }
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshAllFeeds();
+    }, 15 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   async function refreshAllFeeds() {
     for (const feed of feeds) {
       await syncFeed(feed);

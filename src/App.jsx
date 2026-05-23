@@ -19,6 +19,11 @@ import {
   parseIcsToEvents,
   resolveFeedUrl,
 } from "@/lib/calendarFeed";
+import {
+  backupFilename,
+  decodeDashboardBackup,
+  encodeDashboardBackup,
+} from "@/lib/dashboardBackup";
 
 const STORAGE_KEY = "combined-calendar-dashboard-v2";
 
@@ -116,7 +121,7 @@ function EventNotes({ notes }) {
 
 export default function CombinedCalendarDashboard() {
   const initial = loadState();
-  const [sources] = useState(initial?.sources || defaultSources);
+  const [sources, setSources] = useState(initial?.sources || defaultSources);
   const [feeds, setFeeds] = useState(initial?.feeds || []);
   const [events, setEvents] = useState(initial?.events || []);
   const [selectedDate, setSelectedDate] = useState(todayISO());
@@ -136,6 +141,7 @@ export default function CombinedCalendarDashboard() {
   const [feedMessage, setFeedMessage] = useState("");
   const [syncingFeedId, setSyncingFeedId] = useState(null);
   const [importHelpOpen, setImportHelpOpen] = useState(false);
+  const [transferMessage, setTransferMessage] = useState("");
 
   useEffect(() => {
     localStorage.setItem(
@@ -347,6 +353,45 @@ export default function CombinedCalendarDashboard() {
     }
   }
 
+  function exportDashboardData() {
+    const content = encodeDashboardBackup({ sources, feeds, events });
+    const blob = new Blob([content], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = backupFilename();
+    link.click();
+    URL.revokeObjectURL(url);
+    setTransferMessage("Backup downloaded. Import this file in another browser to restore your calendars.");
+  }
+
+  async function importDashboardData(file) {
+    setTransferMessage("");
+    try {
+      const text = await file.text();
+      const backup = decodeDashboardBackup(text);
+      const hasExisting = feeds.length > 0 || events.length > 0;
+      if (
+        hasExisting &&
+        !window.confirm(
+          "Import will replace your connected calendars, events, and settings in this browser. Continue?"
+        )
+      ) {
+        return;
+      }
+
+      if (backup.sources) setSources(backup.sources);
+      setFeeds(backup.feeds);
+      setEvents(backup.events);
+      setTransferMessage(
+        `Imported ${backup.feeds.length} feed(s) and ${backup.events.length} event(s). Calendars will sync on refresh.`
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Import failed";
+      setTransferMessage(message);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -369,7 +414,12 @@ export default function CombinedCalendarDashboard() {
           </div>
         </header>
 
-        <CalendarImportHelpBanner onOpenHelp={() => setImportHelpOpen(true)} />
+        <CalendarImportHelpBanner
+          onOpenHelp={() => setImportHelpOpen(true)}
+          onExportData={exportDashboardData}
+          onImportFile={importDashboardData}
+          transferMessage={transferMessage}
+        />
         <CalendarImportHelpModal open={importHelpOpen} onOpenChange={setImportHelpOpen} />
 
         <div className="grid gap-6 lg:grid-cols-[380px_1fr]">

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { X, HelpCircle } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { X, HelpCircle, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const TABS = [
@@ -206,7 +206,9 @@ export function CalendarImportHelpModal({ open, onOpenChange }) {
   );
 }
 
-export function CalendarImportHelpBanner({ onOpenHelp }) {
+export function CalendarImportHelpBanner({ onOpenHelp, onExportData, onImportFile, transferMessage }) {
+  const fileInputRef = useRef(null);
+
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
@@ -217,17 +219,51 @@ export function CalendarImportHelpBanner({ onOpenHelp }) {
           <p className="text-sm font-medium text-slate-900">Need your calendar import URL?</p>
           <p className="text-sm text-slate-500">
             Step-by-step instructions for Gmail and Microsoft Outlook ICS feeds.
+            {transferMessage && (
+              <span className="mt-1 block text-slate-700">{transferMessage}</span>
+            )}
           </p>
         </div>
       </div>
-      <Button
-        variant="outline"
-        className="shrink-0 rounded-2xl"
-        type="button"
-        onClick={onOpenHelp}
-      >
-        View instructions
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          className="shrink-0 rounded-2xl"
+          type="button"
+          onClick={onExportData}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Export data
+        </Button>
+        <Button
+          variant="outline"
+          className="shrink-0 rounded-2xl"
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload className="mr-2 h-4 w-4" />
+          Import data
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,.txt,application/json,text/plain"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onImportFile(file);
+            e.target.value = "";
+          }}
+        />
+        <Button
+          variant="outline"
+          className="shrink-0 rounded-2xl"
+          type="button"
+          onClick={onOpenHelp}
+        >
+          View instructions
+        </Button>
+      </div>
     </div>
   );
 }
